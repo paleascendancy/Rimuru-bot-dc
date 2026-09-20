@@ -6,11 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PREPARE_STEPS = [
-  'fix-mangamorph-owner-role.js',
-  'setup-pale-services.js',
-  'configure-pale-channels.js',
-  'setup-pale-staff-tasks.js',
-  'setup-pale-about.js',
   'integrate-reaction-roles.js',
   'integrate-suggestions.js',
   'integrate-financial-support.js',
@@ -52,14 +47,14 @@ function runStep(file) {
 }
 
 async function bootstrap() {
-  console.log('[BOOT] Preparando integrações e configuração do Rimuru...');
+  console.log('[BOOT] Preparando integrações locais do Rimuru...');
 
   for (const file of PREPARE_STEPS) {
     console.log(`[BOOT] → ${file}`);
     await runStep(file);
   }
 
-  console.log('[BOOT] Preparação concluída. Iniciando cliente principal...');
+  console.log('[BOOT] Integrações prontas. Iniciando cliente principal...');
   await import('./index.js');
 }
 
