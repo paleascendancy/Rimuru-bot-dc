@@ -45,7 +45,7 @@ client.once(Events.ClientReady, async () => {
         }
 
         if (!role.editable) {
-          console.warn(`[OWNER-ROLE] Cargo ${role.name} não é editável pelo bot; ajuste a hierarquia do bot se necessário.`);
+          console.log(`[OWNER-ROLE] Cargo ${role.name} ignorado: está acima do bot na hierarquia.`);
           continue;
         }
 
