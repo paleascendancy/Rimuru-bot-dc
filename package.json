@@ -6,7 +6,8 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/bootstrap.js"
+    "start": "node src/bootstrap.js",
+    "setup:guild": "node src/maintenance.js"
   },
   "engines": {
     "node": "20.x"
