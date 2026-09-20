@@ -1,0 +1,18 @@
+{
+  "name": "mangamorph-discord-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot oficial do Discord do MangaMorph",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/fix-mangamorph-owner-role.js && node src/setup-pale-services.js && node src/configure-pale-channels.js && node src/setup-pale-staff-tasks.js && node src/setup-pale-about.js && node src/integrate-reaction-roles.js && node src/integrate-suggestions.js && node src/integrate-financial-support.js && node src/integrate-pale-services.js && node src/integrate-pale.js && node src/integrate-member-role-safety.js && node src/integrate-mangamorph-admin.js && node src/unpack-mangamorph-pro-tools.js && node src/integrate-mangamorph-pro-tools.js && node src/integrate-mangamorph-webhooks.js && node src/integrate-welcome-manager.js && node src/fix-welcome-mention.js && node src/integrate-live-preview.js && node src/integrate-embed-studio.js && node src/fix-embed-studio-emoji.js && node src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0"
+  }
+}
