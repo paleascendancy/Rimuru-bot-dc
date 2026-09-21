@@ -17,6 +17,7 @@ import {
 } from 'discord.js';
 import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 import { configureBumpChannel } from './bump-permissions.js';
+import { repairWelcomeNames } from './repair-welcome-names.js';
 
 const {
   DISCORD_TOKEN,
@@ -746,6 +747,10 @@ client.once(Events.ClientReady, async () => {
 
   configureBumpChannel(client).catch((error) => {
     console.error('[BUMP] Falha ao configurar #bump:', error);
+  });
+
+  repairWelcomeNames(client).catch((error) => {
+    console.error('[WELCOME-REPAIR] Falha na correção de nomes:', error);
   });
 
   for (const guild of client.guilds.cache.values()) {
