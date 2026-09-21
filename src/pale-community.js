@@ -8,7 +8,7 @@ import {
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
-import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
+import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 
 export const PALE_COMMUNITY_GUILD_ID = '1513757281311916042';
 
@@ -198,7 +198,7 @@ async function ensureRolePanels(guild) {
     const text = messageEmbedText(message);
     return text.includes('personalizeseuperfil') || text.includes('paleascendancyidentidade');
   });
-  let intro = introMatches ? oldestMessage(introMatches.values()) : null;
+  let intro = introMatches ? newestMessage(introMatches.values()) : null;
   if (intro) {
     await intro.edit(introPayload).catch(() => {});
     const duplicates = introMatches.filter((message) => message.id !== intro.id);
@@ -218,7 +218,7 @@ async function ensureRolePanels(guild) {
       const hitCount = labels.filter((label) => text.includes(label)).length;
       return hitCount >= Math.min(3, labels.length);
     });
-    let message = matches ? oldestMessage(matches.values()) : null;
+    let message = matches ? newestMessage(matches.values()) : null;
     if (message) {
       await message.edit(payload).catch(() => {});
       const duplicates = matches.filter((candidate) => candidate.id !== message.id);
@@ -319,7 +319,7 @@ async function ensureSuggestionPanel(guild) {
       text.includes('sugestoesclarassao');
   });
 
-  const primary = panels ? oldestMessage(panels.values()) : null;
+  const primary = panels ? newestMessage(panels.values()) : null;
   if (primary) await primary.edit(payload).catch(() => {});
   else await channel.send(payload);
 
