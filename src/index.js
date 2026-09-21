@@ -968,11 +968,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       await interaction.reply({ content: '🔒 Ticket encerrado. Este canal será removido em alguns segundos.' });
+      const ownerMember = ownerId ? await getGuildMember(interaction.guild, ownerId) : null;
+      const ownerLabel = ownerMember
+        ? userIdentity(ownerMember.user, ownerMember)
+        : ownerId
+          ? `ID: ${ownerId}`
+          : null;
+
       await sendLog(
         interaction.guild,
         'Ticket fechado',
         `${userIdentity(interaction.user, actor)} fechou **#${interaction.channel.name}**.`,
-        ownerId ? [{ name: 'Solicitante', value: `<@${ownerId}>`, inline: true }] : []
+        ownerLabel ? [{ name: 'Solicitante', value: ownerLabel, inline: false }] : []
       );
 
       setTimeout(() => {
