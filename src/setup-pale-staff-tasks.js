@@ -6,6 +6,7 @@ import {
   Events,
   GatewayIntentBits
 } from 'discord.js';
+import { messageEmbedText, oldestMessage } from './panel-utils.js';
 
 const { DISCORD_TOKEN } = process.env;
 const PALE_GUILD_ID = '1513757281311916042';
@@ -176,12 +177,16 @@ async function syncPanels(channel, embeds) {
 
   for (const embed of embeds) {
     const title = embed.data.title;
+    const marker = normalize(title);
     const matches = recent?.filter((message) =>
       message.author.id === client.user.id &&
-      message.embeds.some((existing) => existing.title === title)
+      (
+        message.embeds.some((existing) => existing.title === title) ||
+        messageEmbedText(message).includes(marker)
+      )
     );
 
-    const primary = matches?.first() || null;
+    const primary = matches ? oldestMessage(matches.values()) : null;
     if (primary) {
       await primary.edit({ embeds: [embed] });
       const duplicates = matches.filter((message) => message.id !== primary.id);

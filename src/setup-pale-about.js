@@ -9,6 +9,7 @@ import {
   Events,
   GatewayIntentBits
 } from 'discord.js';
+import { messageEmbedText, oldestMessage } from './panel-utils.js';
 
 const { DISCORD_TOKEN } = process.env;
 const PALE_GUILD_ID = '1513757281311916042';
@@ -142,18 +143,21 @@ client.once(Events.ClientReady, async () => {
         .setURL(editor.url)
     );
 
-    const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-    const panels = recent?.filter((message) =>
-      message.author.id === client.user.id &&
-      message.embeds.some((embed) => embed.title === '🌐 Sobre a comunidade')
-    );
+    const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    const panels = recent?.filter((message) => {
+      if (message.author.id !== client.user.id) return false;
+      const text = messageEmbedText(message);
+      return text.includes('sobreacomunidade') ||
+        text.includes('editoresdepromocaoeservicos') ||
+        text.includes('criatividadeorganizacaoeentrega');
+    });
 
     const payload = {
       embeds: [header, editors],
       components: [new ActionRowBuilder().addComponents(...buttons)]
     };
 
-    const primary = panels?.first() || null;
+    const primary = panels ? oldestMessage(panels.values()) : null;
     if (primary) {
       await primary.edit(payload);
       const duplicates = panels.filter((message) => message.id !== primary.id);

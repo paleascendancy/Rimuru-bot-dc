@@ -8,6 +8,7 @@ import {
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
+import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
 
 export const PALE_COMMUNITY_GUILD_ID = '1513757281311916042';
 
@@ -192,18 +193,31 @@ async function ensureRolePanels(guild) {
     ]
   };
 
-  let intro = recent?.find((message) =>
-    message.author.id === guild.client.user.id && message.embeds.some((embed) => embed.title === introTitle)
-  ) || null;
-  if (intro) await intro.edit(introPayload).catch(() => {});
-  else intro = await channel.send(introPayload);
+  const introMatches = recent?.filter((message) => {
+    if (message.author.id !== guild.client.user.id) return false;
+    const text = messageEmbedText(message);
+    return text.includes('personalizeseuperfil') || text.includes('paleascendancyidentidade');
+  });
+  let intro = introMatches ? oldestMessage(introMatches.values()) : null;
+  if (intro) {
+    await intro.edit(introPayload).catch(() => {});
+    const duplicates = introMatches.filter((message) => message.id !== intro.id);
+    for (const duplicate of duplicates.values()) await duplicate.delete().catch(() => {});
+  } else {
+    intro = await channel.send(introPayload);
+  }
 
   for (const group of ROLE_GROUPS) {
     const payload = { embeds: [rolePanelEmbed(group)] };
-    const matches = recent?.filter((message) =>
-      message.author.id === guild.client.user.id && message.embeds.some((embed) => embed.title === group.title)
-    );
-    let message = matches?.first() || null;
+    const labels = group.items.map((item) => normalize(item.label));
+    const matches = recent?.filter((message) => {
+      if (message.author.id !== guild.client.user.id) return false;
+      const text = messageEmbedText(message);
+      if (text.includes(normalize(group.title))) return true;
+      const hitCount = labels.filter((label) => text.includes(label)).length;
+      return hitCount >= Math.min(3, labels.length);
+    });
+    let message = matches ? oldestMessage(matches.values()) : null;
     if (message) {
       await message.edit(payload).catch(() => {});
       const duplicates = matches.filter((candidate) => candidate.id !== message.id);
@@ -296,18 +310,21 @@ async function ensureSuggestionPanel(guild) {
   };
 
   const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-  const panels = recent?.filter((message) =>
-    message.author.id === guild.client.user.id &&
-    message.embeds.some((embed) => [title, '💡 Sugestões'].includes(embed.title))
-  );
+  const panels = recent?.filter((message) => {
+    if (message.author.id !== guild.client.user.id) return false;
+    const text = messageEmbedText(message);
+    return messageHasCustomId(message, 'pa_suggestion_open') ||
+      text.includes(normalize(title)) ||
+      text.includes('sugestoesclarassao');
+  });
 
-  const exact = panels?.find((message) => message.embeds.some((embed) => embed.title === title)) || null;
-  if (exact) await exact.edit(payload).catch(() => {});
+  const primary = panels ? oldestMessage(panels.values()) : null;
+  if (primary) await primary.edit(payload).catch(() => {});
   else await channel.send(payload);
 
   if (panels) {
     for (const message of panels.values()) {
-      if (exact && message.id === exact.id) continue;
+      if (primary && message.id === primary.id) continue;
       await message.delete().catch(() => {});
     }
   }
