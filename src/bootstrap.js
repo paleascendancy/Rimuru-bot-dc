@@ -6,10 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PREPARE_STEPS = [
-  'reset-managed-panels.js',
-  'setup-pale-services.js',
-  'setup-pale-about.js',
-  'setup-pale-staff-tasks.js',
   'dedupe-managed-panels.js',
   'integrate-reaction-roles.js',
   'integrate-suggestions.js',
