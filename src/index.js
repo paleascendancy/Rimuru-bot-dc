@@ -15,6 +15,7 @@ import {
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
+import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
 
 const {
   DISCORD_TOKEN,
@@ -229,7 +230,7 @@ async function ensureRulesPanel(guild) {
     )
   );
 
-  const primary = ruleMessages?.first() || null;
+  const primary = ruleMessages ? oldestMessage(ruleMessages.values()) : null;
 
   if (primary) {
     await primary.edit({ embeds });
@@ -385,11 +386,14 @@ async function ensureApplicationPanel(guild) {
   );
 
   const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-  const applicationMessages = recent?.filter((message) =>
-    message.author.id === client.user.id &&
-    message.embeds.some((embed) => embed.title === '📨 Candidaturas MangaMorph')
-  );
-  const primary = applicationMessages?.first() || null;
+  const applicationMessages = recent?.filter((message) => {
+    if (message.author.id !== client.user.id) return false;
+    const text = messageEmbedText(message);
+    return messageHasCustomId(message, 'mm_application_open') ||
+      text.includes('candidaturasmangamorph') ||
+      text.includes('mangamorphequipe');
+  });
+  const primary = applicationMessages ? oldestMessage(applicationMessages.values()) : null;
   const payload = {
     embeds: buildApplicationEmbeds(),
     components: applicationPanelComponents()
@@ -529,11 +533,15 @@ function ticketPanelComponents() {
 
 async function ensureTicketPanel(guild) {
   const { panelChannel: channel } = await ensureSupportArea(guild);
-  const recent = await channel.messages.fetch({ limit: 30 }).catch(() => null);
-  const existing = recent?.find((message) =>
-    message.author.id === client.user.id &&
-    message.embeds.some((embed) => embed.title === 'Central de atendimento MangaMorph')
-  );
+  const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+  const matches = recent?.filter((message) => {
+    if (message.author.id !== client.user.id) return false;
+    const text = messageEmbedText(message);
+    return messageHasCustomId(message, 'mm_ticket_open') ||
+      text.includes('centraldeatendimentomangamorph') ||
+      text.includes('mangamorphsuporte');
+  });
+  const existing = matches ? oldestMessage(matches.values()) : null;
 
   const embed = new EmbedBuilder()
     .setColor(0x6f7cff)
@@ -551,6 +559,10 @@ async function ensureTicketPanel(guild) {
 
   if (existing) {
     await existing.edit(payload);
+    const duplicates = matches.filter((message) => message.id !== existing.id);
+    for (const duplicate of duplicates.values()) {
+      await duplicate.delete().catch(() => {});
+    }
     console.log(`[${guild.name}] Painel de suporte atualizado.`);
     return;
   }
