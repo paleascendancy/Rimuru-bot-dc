@@ -9,6 +9,7 @@ import {
   Events,
   GatewayIntentBits
 } from 'discord.js';
+import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
 
 const { DISCORD_TOKEN } = process.env;
 const PALE_GUILD_ID = '1513757281311916042';
@@ -98,13 +99,19 @@ client.once(Events.ClientReady, async () => {
       .setEmoji('💼')
       .setStyle(ButtonStyle.Primary);
 
-    const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-    const panels = recent?.filter((message) =>
-      message.author.id === client.user.id &&
-      message.embeds.some((item) => item.title === '🧾 Solicitar um serviço')
-    );
+    const recent = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    const panels = recent?.filter((message) => {
+      if (message.author.id !== client.user.id) return false;
+      const text = messageEmbedText(message);
+      return messageHasCustomId(message, 'pa_service_open') ||
+        text.includes('solicitarumservico') ||
+        (
+          text.includes('paleascendancyservicos') &&
+          text.includes('atendimentoprofissional')
+        );
+    });
 
-    const primary = panels?.first() || null;
+    const primary = panels ? oldestMessage(panels.values()) : null;
     const payload = {
       embeds: [embed],
       components: [new ActionRowBuilder().addComponents(button)]
