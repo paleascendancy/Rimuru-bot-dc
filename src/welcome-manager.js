@@ -95,19 +95,27 @@ function stringifyButtons(buttons = []) {
   return buttons.map((button) => `${button.label}|${button.url}|${button.emoji || ''}`).join(';;');
 }
 
-function replaceTokens(value, member) {
+function replaceTokens(value, member, { allowMention = false } = {}) {
   if (!value) return '';
   const user = member.user;
   const displayName = member.displayName || user.globalName || user.username;
   const avatar = user.displayAvatarURL({ size: 1024 });
-  return String(value)
+
+  const rendered = String(value)
     .replaceAll('{user}', displayName)
     .replaceAll('{username}', user.username)
     .replaceAll('{displayname}', displayName)
+    .replaceAll('{mention}', allowMention ? `<@${user.id}>` : displayName)
     .replaceAll('{server}', member.guild.name)
     .replaceAll('{membercount}', String(member.guild.memberCount))
     .replaceAll('{avatar}', avatar)
     .replaceAll('{id}', user.id);
+
+  if (allowMention) return rendered;
+
+  return rendered
+    .replaceAll(`<@${user.id}>`, displayName)
+    .replaceAll(`<@!${user.id}>`, displayName);
 }
 
 function removable(current, incoming) {
@@ -278,7 +286,7 @@ function buildRenderedPayload(config, member) {
   }
 
   return {
-    content: replaceTokens(config.content, member) || undefined,
+    content: replaceTokens(config.content, member, { allowMention: true }) || undefined,
     embeds: embed ? [embed] : [],
     components,
     allowedMentions: {
@@ -420,7 +428,7 @@ function configSummary(config, channel) {
     `**Botões:** ${(config.buttons || []).length}`,
     '',
     '**Variáveis disponíveis**',
-    '`{user}` `{username}` `{displayname}` `{server}` `{membercount}` `{avatar}` `{id}`'
+    '`{user}` `{username}` `{displayname}` `{mention}` `{server}` `{membercount}` `{avatar}` `{id}`'
   ].join('\n');
 }
 
