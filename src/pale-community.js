@@ -213,7 +213,8 @@ async function ensureRolePanels(guild) {
     const matches = recent?.filter((message) => {
       if (message.author.id !== guild.client.user.id) return false;
       const text = messageEmbedText(message);
-      if (text.includes(normalize(group.title))) return true;
+      const titles = normalize(message.embeds.map((embed) => embed.title || '').join(' '));
+      if (titles.includes(normalize(group.title))) return true;
       const hitCount = labels.filter((label) => text.includes(label)).length;
       return hitCount >= Math.min(3, labels.length);
     });
