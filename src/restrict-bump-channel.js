@@ -46,28 +46,32 @@ client.once(Events.ClientReady, async () => {
       return;
     }
 
+    const adminRoles = roles.filter((role) =>
+      role.permissions.has(PermissionFlagsBits.Administrator) ||
+      normalize(role.name) === 'administrador'
+    );
+    const keepOverwriteIds = new Set([
+      guild.roles.everyone.id,
+      client.user.id,
+      ...adminRoles.keys()
+    ]);
+
+    for (const overwrite of bump.permissionOverwrites.cache.values()) {
+      if (keepOverwriteIds.has(overwrite.id)) continue;
+      await bump.permissionOverwrites.delete(overwrite.id).catch(() => {});
+    }
+
     await bump.permissionOverwrites.edit(guild.roles.everyone.id, {
       ViewChannel: false
     });
 
-    for (const role of roles.values()) {
-      if (role.id === guild.roles.everyone.id || role.managed) continue;
-
-      const isAdminRole =
-        role.permissions.has(PermissionFlagsBits.Administrator) ||
-        normalize(role.name) === 'administrador';
-
-      await bump.permissionOverwrites.edit(role.id, isAdminRole
-        ? {
-            ViewChannel: true,
-            ReadMessageHistory: true,
-            SendMessages: true,
-            UseApplicationCommands: true
-          }
-        : {
-            ViewChannel: false
-          }
-      );
+    for (const role of adminRoles.values()) {
+      await bump.permissionOverwrites.edit(role.id, {
+        ViewChannel: true,
+        ReadMessageHistory: true,
+        SendMessages: true,
+        UseApplicationCommands: true
+      });
     }
 
     await bump.permissionOverwrites.edit(client.user.id, {
