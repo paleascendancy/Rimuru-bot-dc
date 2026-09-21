@@ -15,7 +15,7 @@ import {
   TextInputBuilder,
   TextInputStyle
 } from 'discord.js';
-import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
+import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 
 const {
   DISCORD_TOKEN,
@@ -230,7 +230,7 @@ async function ensureRulesPanel(guild) {
     )
   );
 
-  const primary = ruleMessages ? oldestMessage(ruleMessages.values()) : null;
+  const primary = ruleMessages ? newestMessage(ruleMessages.values()) : null;
 
   if (primary) {
     await primary.edit({ embeds });
@@ -393,7 +393,7 @@ async function ensureApplicationPanel(guild) {
       text.includes('candidaturasmangamorph') ||
       text.includes('mangamorphequipe');
   });
-  const primary = applicationMessages ? oldestMessage(applicationMessages.values()) : null;
+  const primary = applicationMessages ? newestMessage(applicationMessages.values()) : null;
   const payload = {
     embeds: buildApplicationEmbeds(),
     components: applicationPanelComponents()
@@ -541,7 +541,7 @@ async function ensureTicketPanel(guild) {
       text.includes('centraldeatendimentomangamorph') ||
       text.includes('mangamorphsuporte');
   });
-  const existing = matches ? oldestMessage(matches.values()) : null;
+  const existing = matches ? newestMessage(matches.values()) : null;
 
   const embed = new EmbedBuilder()
     .setColor(0x6f7cff)

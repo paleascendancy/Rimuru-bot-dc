@@ -6,7 +6,7 @@ import {
   Events,
   GatewayIntentBits
 } from 'discord.js';
-import { messageEmbedText, oldestMessage } from './panel-utils.js';
+import { messageEmbedText, newestMessage } from './panel-utils.js';
 
 const { DISCORD_TOKEN } = process.env;
 const PALE_GUILD_ID = '1513757281311916042';
@@ -186,7 +186,7 @@ async function syncPanels(channel, embeds) {
       )
     );
 
-    const primary = matches ? oldestMessage(matches.values()) : null;
+    const primary = matches ? newestMessage(matches.values()) : null;
     if (primary) {
       await primary.edit({ embeds: [embed] });
       const duplicates = matches.filter((message) => message.id !== primary.id);
