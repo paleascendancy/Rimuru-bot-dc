@@ -25,16 +25,21 @@ export function oldestMessage(messages) {
   return [...messages].sort((a, b) => a.createdTimestamp - b.createdTimestamp)[0] || null;
 }
 
-export async function keepOldestAndDeleteRest(messages, label = 'painel') {
-  const ordered = [...messages].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+export function newestMessage(messages) {
+  return [...messages].sort((a, b) => b.createdTimestamp - a.createdTimestamp)[0] || null;
+}
+
+export async function keepNewestAndDeleteRest(messages, label = 'painel') {
+  const ordered = [...messages].sort((a, b) => b.createdTimestamp - a.createdTimestamp);
   const primary = ordered[0] || null;
   let removed = 0;
 
-  for (const duplicate of ordered.slice(1)) {
-    await duplicate.delete().then(() => {
+  for (const oldMessage of ordered.slice(1)) {
+    await oldMessage.delete().then(() => {
       removed += 1;
     }).catch((error) => {
-      console.error(`[PANEL-GUARD] Falha ao excluir duplicata de ${label} (${duplicate.id}):`, error.message);
+      if (error?.code === 10008 || error?.rawError?.code === 10008) return;
+      console.error(`[PANEL-GUARD] Falha ao excluir mensagem antiga de ${label} (${oldMessage.id}):`, error.message);
     });
   }
 
