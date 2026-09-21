@@ -16,6 +16,7 @@ import {
   TextInputStyle
 } from 'discord.js';
 import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
+import { configureBumpChannel } from './bump-permissions.js';
 
 const {
   DISCORD_TOKEN,
@@ -742,6 +743,10 @@ async function setupGuild(guild) {
 client.once(Events.ClientReady, async () => {
   console.log(`MangaMorph online como ${client.user.tag}`);
   client.user.setActivity('MangaMorph');
+
+  configureBumpChannel(client).catch((error) => {
+    console.error('[BUMP] Falha ao configurar #bump:', error);
+  });
 
   for (const guild of client.guilds.cache.values()) {
     await setupGuild(guild);
