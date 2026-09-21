@@ -9,8 +9,8 @@ const welcomePath = path.join(__dirname, 'welcome-manager.js');
 let source = fs.readFileSync(welcomePath, 'utf8');
 let changed = false;
 
-const oldContent = "    content: replaceTokens(config.content, member) || undefined,";
-const newContent = "    content: [config.mention ? `<@${member.id}>` : '', replaceTokens(config.content, member)].filter(Boolean).join(' ') || undefined,";
+const oldContent = "    content: replaceTokens(config.content, member, { allowMention: true }) || undefined,";
+const newContent = "    content: [config.mention ? `<@${member.id}>` : '', replaceTokens(config.content, member, { allowMention: true })].filter(Boolean).join(' ') || undefined,";
 
 if (source.includes(oldContent)) {
   source = source.replace(oldContent, newContent);
