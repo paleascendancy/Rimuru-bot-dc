@@ -6,7 +6,7 @@ import {
   GatewayIntentBits
 } from 'discord.js';
 import {
-  keepOldestAndDeleteRest,
+  keepNewestAndDeleteRest,
   messageEmbedText,
   messageHasCustomId,
   normalizePanelText
@@ -46,9 +46,9 @@ async function dedupeFamily(channel, messages, botId, label, predicate) {
 
   if (matches.length <= 1) return 0;
 
-  const { removed } = await keepOldestAndDeleteRest(matches, label);
+  const { removed } = await keepNewestAndDeleteRest(matches, label);
   if (removed > 0) {
-    console.log(`[PANEL-GUARD] ${channel.guild.name} / #${channel.name}: ${label} → ${removed} duplicata(s) removida(s).`);
+    console.log(`[PANEL-GUARD] ${channel.guild.name} / #${channel.name}: ${label} → ${removed} mensagem(ns) antiga(s) removida(s).`);
   }
   return removed;
 }
