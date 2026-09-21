@@ -33,6 +33,10 @@ function findChannel(channels, names) {
   ) || null;
 }
 
+function messageTitleText(message) {
+  return normalizePanelText(message.embeds.map((embed) => embed.title || '').join(' '));
+}
+
 async function dedupeFamily(channel, messages, botId, label, predicate) {
   if (!channel || !messages) return 0;
 
@@ -117,7 +121,8 @@ function paleFamiliesForChannel(name) {
         label: 'cargos de áreas criativas',
         match: (message) => {
           const text = messageEmbedText(message);
-          return text.includes('areascriativas') ||
+          const titles = messageTitleText(message);
+          return titles.includes('areascriativas') ||
             (text.includes('edicaodevideo') && text.includes('motiondesign') && text.includes('socialmedia'));
         }
       },
@@ -125,7 +130,8 @@ function paleFamiliesForChannel(name) {
         label: 'cargos de ferramentas',
         match: (message) => {
           const text = messageEmbedText(message);
-          return text.includes('ferramentas') ||
+          const titles = messageTitleText(message);
+          return titles.includes('ferramentas') ||
             (text.includes('capcut') && text.includes('aftereffects') && text.includes('premierepro'));
         }
       },
@@ -133,7 +139,8 @@ function paleFamiliesForChannel(name) {
         label: 'cargos de notificações',
         match: (message) => {
           const text = messageEmbedText(message);
-          return text.includes('notificacoes') ||
+          const titles = messageTitleText(message);
+          return titles.includes('notificacoes') ||
             (text.includes('anuncios') && text.includes('eventos') && text.includes('parcerias'));
         }
       },
@@ -141,7 +148,8 @@ function paleFamiliesForChannel(name) {
         label: 'cargos de cor do perfil',
         match: (message) => {
           const text = messageEmbedText(message);
-          return text.includes('cordoperfil') ||
+          const titles = messageTitleText(message);
+          return titles.includes('cordoperfil') ||
             (text.includes('crimson') && text.includes('azure') && text.includes('silver'));
         }
       }
@@ -162,7 +170,7 @@ function paleFamiliesForChannel(name) {
 
     return markers.map(([label, marker]) => ({
       label,
-      match: (message) => messageEmbedText(message).includes(marker)
+      match: (message) => messageTitleText(message).includes(marker)
     }));
   }
 
