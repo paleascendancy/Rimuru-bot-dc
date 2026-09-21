@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 
 const PREPARE_STEPS = [
   'dedupe-managed-panels.js',
+  'setup-pale-staff-tasks.js',
+  'repair-pale-community-panels.js',
   'integrate-reaction-roles.js',
   'integrate-suggestions.js',
   'integrate-financial-support.js',
