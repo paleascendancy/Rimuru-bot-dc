@@ -9,7 +9,7 @@ import {
   Events,
   GatewayIntentBits
 } from 'discord.js';
-import { messageEmbedText, messageHasCustomId, oldestMessage } from './panel-utils.js';
+import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 
 const { DISCORD_TOKEN } = process.env;
 const PALE_GUILD_ID = '1513757281311916042';
@@ -111,7 +111,7 @@ client.once(Events.ClientReady, async () => {
         );
     });
 
-    const primary = panels ? oldestMessage(panels.values()) : null;
+    const primary = panels ? newestMessage(panels.values()) : null;
     const payload = {
       embeds: [embed],
       components: [new ActionRowBuilder().addComponents(button)]
