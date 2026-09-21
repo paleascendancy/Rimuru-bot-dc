@@ -1,4 +1,4 @@
-import { ChannelType } from 'discord.js';
+import { ChannelType, PermissionFlagsBits } from 'discord.js';
 import { setupPaleCommunity } from './pale-community.js';
 
 const normalize = (value = '') => value
@@ -22,6 +22,10 @@ export async function setupPaleRuntime(guild) {
     channel?.type === ChannelType.GuildText && normalize(channel.name) === 'sugestoes'
   ) || null;
 
+  const bump = channels.find((channel) =>
+    channel?.type === ChannelType.GuildText && normalize(channel.name) === 'bump'
+  ) || null;
+
   if (suggestions && memberRole) {
     await suggestions.permissionOverwrites.edit(memberRole.id, {
       ViewChannel: true,
@@ -32,6 +36,41 @@ export async function setupPaleRuntime(guild) {
       CreatePrivateThreads: false,
       AddReactions: true
     }).catch(() => {});
+  }
+
+  if (bump) {
+    await bump.permissionOverwrites.edit(guild.roles.everyone.id, {
+      ViewChannel: false
+    }).catch(() => {});
+
+    for (const role of roles.values()) {
+      if (role.id === guild.roles.everyone.id || role.managed) continue;
+
+      const isAdminRole =
+        role.permissions.has(PermissionFlagsBits.Administrator) ||
+        normalize(role.name) === 'administrador';
+
+      await bump.permissionOverwrites.edit(role.id, isAdminRole
+        ? {
+            ViewChannel: true,
+            ReadMessageHistory: true,
+            SendMessages: true,
+            UseApplicationCommands: true
+          }
+        : {
+            ViewChannel: false
+          }
+      ).catch(() => {});
+    }
+
+    await bump.permissionOverwrites.edit(guild.client.user.id, {
+      ViewChannel: true,
+      ReadMessageHistory: true,
+      SendMessages: true,
+      UseApplicationCommands: true
+    }).catch(() => {});
+
+    console.log('[Pale Ascendancy] Canal #bump restrito a administradores.');
   }
 
   await setupPaleCommunity(guild).catch((error) => {
