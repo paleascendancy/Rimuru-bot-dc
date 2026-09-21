@@ -1,28 +1,13 @@
-import 'dotenv/config';
 import {
   ChannelType,
-  Client,
-  EmbedBuilder,
-  Events,
-  GatewayIntentBits
+  EmbedBuilder
 } from 'discord.js';
-
-const { DISCORD_TOKEN } = process.env;
-
-if (!DISCORD_TOKEN) {
-  console.error('[WELCOME-REPAIR] DISCORD_TOKEN não configurado.');
-  process.exit(1);
-}
 
 const normalize = (value = '') => value
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '');
-
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
-});
 
 async function readableName(guild, id) {
   const member = await guild.members.fetch(id).catch(() => null);
@@ -62,44 +47,38 @@ async function repairEmbed(embed, guild) {
   return EmbedBuilder.from(data);
 }
 
-client.once(Events.ClientReady, async () => {
+export async function repairWelcomeNames(client) {
   let repaired = 0;
 
-  try {
-    for (const guild of client.guilds.cache.values()) {
-      const channels = await guild.channels.fetch();
+  for (const guild of client.guilds.cache.values()) {
+    const channels = await guild.channels.fetch();
 
-      for (const channel of channels.values()) {
-        if (!channel || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) continue;
-        if (!normalize(channel.name).includes('boasvindas')) continue;
+    for (const channel of channels.values()) {
+      if (!channel || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) continue;
+      if (!normalize(channel.name).includes('boasvindas')) continue;
 
-        const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-        if (!messages) continue;
+      const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+      if (!messages) continue;
 
-        for (const message of messages.values()) {
-          if (message.author.id !== client.user.id || !message.embeds.length) continue;
+      for (const message of messages.values()) {
+        if (message.author.id !== client.user.id || !message.embeds.length) continue;
 
-          const raw = JSON.stringify(message.embeds.map((embed) => embed.toJSON()));
-          if (!/<@!?\d{17,20}>/.test(raw)) continue;
+        const raw = JSON.stringify(message.embeds.map((embed) => embed.toJSON()));
+        if (!/<@!?\d{17,20}>/.test(raw)) continue;
 
-          const embeds = [];
-          for (const embed of message.embeds) {
-            embeds.push(await repairEmbed(embed, guild));
-          }
-
-          await message.edit({ embeds }).then(() => {
-            repaired += 1;
-          }).catch((error) => {
-            console.error(`[WELCOME-REPAIR] Falha ao corrigir mensagem ${message.id}:`, error.message);
-          });
+        const embeds = [];
+        for (const embed of message.embeds) {
+          embeds.push(await repairEmbed(embed, guild));
         }
+
+        await message.edit({ embeds }).then(() => {
+          repaired += 1;
+        }).catch((error) => {
+          console.error(`[WELCOME-REPAIR] Falha ao corrigir mensagem ${message.id}:`, error.message);
+        });
       }
     }
-
-    console.log(`[WELCOME-REPAIR] Mensagens corrigidas: ${repaired}.`);
-  } finally {
-    client.destroy();
   }
-});
 
-client.login(DISCORD_TOKEN);
+  console.log(`[WELCOME-REPAIR] Mensagens corrigidas: ${repaired}.`);
+}
