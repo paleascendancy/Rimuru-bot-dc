@@ -35,13 +35,20 @@ const CHANNEL_DEFS = [
   { aliases: ['chatgeral', 'geral'], name: '💬・chat-geral', category: 'comunidade' },
   { aliases: ['midia', 'media'], name: '🖼️・mídia', category: 'comunidade' },
   { aliases: ['sugestoes', 'sugestao'], name: '💡・sugestões', category: 'comunidade' },
+  { aliases: ['gartic'], name: '🎨・gartic', category: 'comunidade' },
+  { aliases: ['akinator'], name: '🧞・akinator', category: 'comunidade' },
+  { aliases: ['criarcall', 'call'], name: '🔊・criar-call', category: 'comunidade' },
 
   { aliases: ['modelos', 'modelo'], name: '🧩・modelos', category: 'projetos' },
   { aliases: ['divulgacao'], name: '📣・divulgação', category: 'projetos' },
   { aliases: ['artes', 'arte'], name: '🎨・artes', category: 'projetos' },
   { aliases: ['construcoes', 'construcao'], name: '🧱・construções', category: 'projetos' },
+  { aliases: ['addonsdosmembros', 'addons'], name: '🧩・addons-dos-membros', category: 'projetos' },
+  { aliases: ['starklegacy'], name: '💠・stark-legacy', category: 'projetos' },
 
-  { aliases: ['moderacao', 'mod'], name: '🛡️・moderação', category: 'staff' }
+  { aliases: ['punicoes', 'punicao'], name: '⚖️・punições', category: 'staff' },
+  { aliases: ['moderacao', 'mod'], name: '🛡️・moderação', category: 'staff' },
+  { aliases: ['guardar'], name: '🗃️・guardar', category: 'staff' }
 ];
 
 function findReusableCategory(channels, key) {
@@ -111,16 +118,21 @@ client.once(Events.ClientReady, async () => {
 
       const targetCategory = categories.get(definition.category);
       if (channel.name !== definition.name) {
-        await channel.setName(definition.name, 'Padronização visual do UCM Studios');
-        renamed += 1;
+        await channel.setName(definition.name, 'Padronização visual do UCM Studios')
+          .then(() => { renamed += 1; })
+          .catch((error) => {
+            console.error(`[UCM-LAYOUT] Falha ao renomear ${channel.name}:`, error.message);
+          });
       }
 
       if (targetCategory && channel.parentId !== targetCategory.id) {
         await channel.setParent(targetCategory.id, {
           lockPermissions: false,
           reason: 'Organização em quatro categorias do UCM Studios'
-        });
-        moved += 1;
+        }).then(() => { moved += 1; })
+          .catch((error) => {
+            console.error(`[UCM-LAYOUT] Falha ao mover ${channel.name}:`, error.message);
+          });
       }
 
       console.log(`[UCM-LAYOUT] ${channel.name} → ${targetCategory?.name || definition.category}`);
@@ -149,6 +161,14 @@ client.once(Events.ClientReady, async () => {
     const remainingCategories = finalChannels
       .filter((channel) => channel?.type === ChannelType.GuildCategory)
       .map((channel) => channel.name);
+
+    const mappedNames = new Set(CHANNEL_DEFS.flatMap((definition) => definition.aliases.map(normalize)));
+    const leftovers = finalChannels
+      .filter((channel) => channel && channel.type !== ChannelType.GuildCategory)
+      .filter((channel) => !mappedNames.has(normalize(channel.name)))
+      .map((channel) => `${channel.name} [${ChannelType[channel.type] || channel.type}]`);
+
+    console.log(`[UCM-LAYOUT] Canais não mapeados restantes: ${leftovers.length ? leftovers.join(' | ') : 'nenhum'}`);
 
     console.log(
       `[UCM-LAYOUT] Concluído: categorias criadas=${created}, itens renomeados=${renamed}, canais movidos=${moved}, categorias vazias removidas=${removedEmpty}.`
