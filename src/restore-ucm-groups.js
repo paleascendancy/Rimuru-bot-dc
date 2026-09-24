@@ -124,6 +124,18 @@ client.once(Events.ClientReady, async () => {
       let category = group.existingId ? channels.get(group.existingId) : null;
 
       if (!category || category.type !== ChannelType.GuildCategory) {
+        const sameName = channels
+          .filter((channel) => channel?.type === ChannelType.GuildCategory && channel.name === group.name)
+          .sort((a, b) => {
+            const aCount = channels.filter((child) => child.parentId === a.id).size;
+            const bCount = channels.filter((child) => child.parentId === b.id).size;
+            return bCount - aCount;
+          });
+
+        category = sameName.first() || null;
+      }
+
+      if (!category || category.type !== ChannelType.GuildCategory) {
         category = await guild.channels.create({
           name: group.name,
           type: ChannelType.GuildCategory,
@@ -211,6 +223,54 @@ client.once(Events.ClientReady, async () => {
     }
 
     channels = await guild.channels.fetch();
+
+    // Consolida categorias duplicadas com o mesmo nome, preservando todos os canais.
+    for (const group of GROUPS) {
+      const sameName = channels
+        .filter((channel) => channel?.type === ChannelType.GuildCategory && channel.name === group.name)
+        .sort((a, b) => {
+          const aCount = channels.filter((child) => child.parentId === a.id).size;
+          const bCount = channels.filter((child) => child.parentId === b.id).size;
+          return bCount - aCount;
+        });
+
+      const keep = sameName.first();
+      if (!keep || sameName.size <= 1) continue;
+
+      for (const duplicate of sameName.values()) {
+        if (duplicate.id === keep.id) continue;
+
+        const children = channels.filter((child) => child.parentId === duplicate.id);
+        for (const child of children.values()) {
+          const permissions = child.permissionsFor(me);
+          const canManage = me.permissions.has(PermissionFlagsBits.Administrator) ||
+            permissions?.has(PermissionFlagsBits.ManageChannels);
+
+          if (!canManage) {
+            console.log(`[UCM-GROUPS] Duplicata preservada temporariamente porque ${child.name} não pode ser movido.`);
+            continue;
+          }
+
+          await child.edit({
+            parent: keep.id,
+            lockPermissions: false,
+            reason: 'Consolidar categorias duplicadas do UCM'
+          }).catch((error) => {
+            console.error(`[UCM-GROUPS] Falha ao consolidar ${child.name}:`, error.message);
+          });
+        }
+
+        const refreshed = await guild.channels.fetch();
+        const remaining = refreshed.filter((child) => child.parentId === duplicate.id);
+        if (remaining.size === 0) {
+          await duplicate.delete('Remover categoria duplicada vazia do UCM')
+            .then(() => console.log(`[UCM-GROUPS] Categoria duplicada removida: ${duplicate.name}`))
+            .catch((error) => console.error(`[UCM-GROUPS] Falha ao remover duplicata ${duplicate.name}:`, error.message));
+        }
+      }
+
+      channels = await guild.channels.fetch();
+    }
 
     for (const id of OLD_UCM_CATEGORY_IDS) {
       const category = channels.get(id);
