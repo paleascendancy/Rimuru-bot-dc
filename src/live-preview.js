@@ -135,9 +135,10 @@ function replaceTokens(value, member) {
   const user = member.user;
   const displayName = member.displayName || user.globalName || user.username;
   return String(value)
-    .replaceAll('{user}', `<@${user.id}>`)
+    .replaceAll('{user}', displayName)
     .replaceAll('{username}', user.username)
     .replaceAll('{displayname}', displayName)
+    .replaceAll('{mention}', `<@${user.id}>`)
     .replaceAll('{server}', member.guild.name)
     .replaceAll('{membercount}', String(member.guild.memberCount))
     .replaceAll('{avatar}', user.displayAvatarURL({ size: 1024 }))
