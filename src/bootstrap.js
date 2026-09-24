@@ -21,8 +21,7 @@ const PREPARE_STEPS = [
   'fix-welcome-mention.js',
   'integrate-live-preview.js',
   'integrate-embed-studio.js',
-  'fix-embed-studio-emoji.js',
-  'integrate-multiguild.js'
+  'fix-embed-studio-emoji.js'
 ];
 
 function runStep(file) {
