@@ -12,6 +12,7 @@ import {
 import { setupLivePreview } from './live-preview.js';
 import { setupEmbedStudio } from './embed-studio.js';
 import { isGenericGuild } from './guild-profile.js';
+import { removeLegacyMangaMorphArtifacts } from './generic-cleanup.js';
 
 const rimuruCommand = new SlashCommandBuilder()
   .setName('rimuru')
@@ -65,6 +66,10 @@ export async function createBotInvite(client) {
 
 export async function setupGenericGuild(guild, client) {
   if (!isGenericGuild(guild)) return false;
+
+  await removeLegacyMangaMorphArtifacts(guild).catch((error) => {
+    console.error(`[MULTI-CLEANUP] Falha ao limpar ${guild.name}:`, error);
+  });
 
   await upsertGuildCommand(guild, rimuruCommand);
   await upsertGuildCommand(guild, embedCommand);
