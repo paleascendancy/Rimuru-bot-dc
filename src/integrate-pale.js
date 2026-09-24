@@ -37,7 +37,7 @@ if (!source.includes("from './pale.js'")) {
 if (!source.includes('await setupPaleRuntime(guild)')) {
   source = source.replace(
     'async function setupGuild(guild) {',
-    "async function setupGuild(guild) {\n  if (guild.id === PALE_GUILD_ID) {\n    await setupPaleRuntime(guild).catch((error) => {\n      console.error(`Falha ao preparar Pale Ascendancy:`, error);\n    });\n    return;\n  }"
+    "async function setupGuild(guild) {\n  if (guild.id === PALE_GUILD_ID) {\n    await setupPaleRuntime(guild).catch((error) => {\n      console.error(`Falha ao preparar Pale Ascendancy:`, error);\n    });\n  }"
   );
   changed = true;
 }
