@@ -161,7 +161,26 @@ client.once(Events.ClientReady, async () => {
     await moveAndRename(guild, me, CHANNEL_IDS.announcements, '📢・anúncios', comunidade);
     await moveAndRename(guild, me, CHANNEL_IDS.divulgacao, '📣・divulgação', comunidade);
     await moveAndRename(guild, me, CHANNEL_IDS.parcerias, '🤝・parcerias', comunidade);
-    await moveAndRename(guild, me, CHANNEL_IDS.sugestoesForum, '💡・sugestões', comunidade);
+    const suggestionsMoved = await moveAndRename(guild, me, CHANNEL_IDS.sugestoesForum, '💡・sugestões', comunidade);
+    if (!suggestionsMoved) {
+      let suggestions = (await guild.channels.fetch()).find((channel) =>
+        channel?.type === ChannelType.GuildText &&
+        normalize(channel.name) === normalize('💡・sugestões')
+      ) || null;
+
+      if (!suggestions) {
+        suggestions = await guild.channels.create({
+          name: '💡・sugestões',
+          type: ChannelType.GuildText,
+          parent: comunidade.id,
+          topic: 'Envie sugestões para melhorar a comunidade UCM Studios.',
+          reason: 'Canal de sugestões solicitado para a comunidade'
+        });
+        console.log('[UCM-FINAL] Criado: 💡・sugestões');
+      } else if (suggestions.parentId !== comunidade.id && canManage(suggestions, me)) {
+        await suggestions.setParent(comunidade.id, { lockPermissions: false });
+      }
+    }
     await moveAndRename(guild, me, CHANNEL_IDS.artes, '🎨・artes', comunidade);
 
     await moveAndRename(guild, me, CHANNEL_IDS.modelos, '🧩・modelos', addons);
@@ -250,7 +269,9 @@ client.once(Events.ClientReady, async () => {
       const removable = [
         'ucmmembros',
         'membros',
-        'ucmcomunidade'
+        'ucmcomunidade',
+        'ucmsos',
+        'sos'
       ].includes(normalized);
 
       if (!removable) continue;
@@ -261,6 +282,21 @@ client.once(Events.ClientReady, async () => {
       await category.delete('Remover categoria antiga vazia após reorganização final do UCM')
         .then(() => console.log(`[UCM-FINAL] Categoria antiga removida: ${category.name}`))
         .catch(() => {});
+    }
+
+    const refreshed = await guild.channels.fetch();
+    const communityCategory = refreshed.get(comunidade.id);
+    if (communityCategory) {
+      await communityCategory.setPosition(1).catch(() => {});
+    }
+
+    const communityChildren = refreshed
+      .filter((channel) => channel.parentId === comunidade.id)
+      .sort((a, b) => a.rawPosition - b.rawPosition);
+
+    const announcements = communityChildren.find((channel) => normalize(channel.name) === normalize('📢・anúncios'));
+    if (announcements) {
+      await announcements.setPosition(0).catch(() => {});
     }
 
     const finalChannels = await guild.channels.fetch();
