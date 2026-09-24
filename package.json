@@ -7,7 +7,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/bootstrap.js",
-    "setup:guild": "node src/maintenance.js"
+    "setup:guild": "node src/maintenance.js",
+    "setup:ucm": "node src/organize-ucm.js"
   },
   "engines": {
     "node": "20.x"
