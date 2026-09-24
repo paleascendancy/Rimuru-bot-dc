@@ -18,6 +18,8 @@ import {
 import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 import { configureBumpChannel } from './bump-permissions.js';
 import { repairWelcomeNames } from './repair-welcome-names.js';
+import { createBotInvite, setupGenericGuild, handleGenericMemberAdd, handleGenericInteraction } from './generic-guild.js';
+import { isGenericGuild } from './guild-profile.js';
 
 const {
   DISCORD_TOKEN,
@@ -728,6 +730,13 @@ function buildApplicationModal() {
 }
 
 async function setupGuild(guild) {
+  if (isGenericGuild(guild)) {
+    await setupGenericGuild(guild, client).catch((error) => {
+      console.error(`[MULTI] Falha ao preparar ${guild.name}:`, error);
+    });
+    return;
+  }
+
   await ensureRulesPanel(guild).catch((error) => {
     console.error(`Falha ao preparar regras em ${guild.name}:`, error);
   });
@@ -742,8 +751,12 @@ async function setupGuild(guild) {
 }
 
 client.once(Events.ClientReady, async () => {
-  console.log(`MangaMorph online como ${client.user.tag}`);
-  client.user.setActivity('MangaMorph');
+  console.log(`Rimuru online como ${client.user.tag}`);
+  client.user.setActivity('Rimuru • /rimuru ajuda');
+
+  createBotInvite(client)
+    .then((invite) => console.log('[INVITE] ' + invite))
+    .catch((error) => console.error('[INVITE] Falha ao gerar convite:', error));
 
   configureBumpChannel(client).catch((error) => {
     console.error('[BUMP] Falha ao configurar #bump:', error);
@@ -764,6 +777,11 @@ client.on(Events.GuildCreate, async (guild) => {
 
 client.on(Events.GuildMemberAdd, async (member) => {
   try {
+    if (isGenericGuild(member.guild)) {
+      await handleGenericMemberAdd(member, client);
+      return;
+    }
+
     const role = await findMemberRole(member.guild);
     if (role) {
       await member.roles.add(role, 'Entrada automática no MangaMorph').catch((error) => {
@@ -814,6 +832,8 @@ client.on(Events.GuildMemberAdd, async (member) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (!interaction.inGuild()) return;
+
+    if (await handleGenericInteraction(interaction, client)) return;
 
     if (interaction.isButton() && interaction.customId === 'mm_application_open') {
       const alreadyOpen = await findOpenTicket(interaction.guild, interaction.user.id);
