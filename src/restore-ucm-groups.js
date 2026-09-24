@@ -131,8 +131,11 @@ client.once(Events.ClientReady, async () => {
         });
         console.log(`[UCM-GROUPS] Categoria criada: ${group.name}`);
       } else if (category.name !== group.name) {
-        await category.setName(group.name, 'Padronização visual do UCM Studios');
-        console.log(`[UCM-GROUPS] Categoria renomeada: ${group.name}`);
+        await category.setName(group.name, 'Padronização visual do UCM Studios')
+          .then(() => console.log(`[UCM-GROUPS] Categoria renomeada: ${group.name}`))
+          .catch((error) => {
+            console.log(`[UCM-GROUPS] Categoria mantida como "${category.name}" por falta de acesso para renomear: ${error.message}`);
+          });
       }
 
       await category.setPosition(index).catch(() => {});
