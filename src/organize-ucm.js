@@ -15,7 +15,7 @@ if (!DISCORD_TOKEN) {
 }
 
 const normalize = (value = '') => String(value)
-  .normalize('NFD')
+  .normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '');
@@ -81,6 +81,14 @@ client.once(Events.ClientReady, async () => {
     }
 
     let channels = await guild.channels.fetch();
+    const me = await guild.members.fetchMe().catch(() => null);
+    console.log('[UCM-AUDIT] Canais encontrados no servidor:');
+    for (const channel of channels.sort((a, b) => a.rawPosition - b.rawPosition).values()) {
+      const perms = me && channel.permissionsFor ? channel.permissionsFor(me) : null;
+      const parentName = channel.parent?.name || 'sem categoria';
+      console.log(`[UCM-AUDIT] ${channel.id} | ${ChannelType[channel.type] || channel.type} | ${channel.name} | pai=${parentName} | ver=${perms?.has('ViewChannel') ?? 'n/a'} | gerenciar=${perms?.has('ManageChannels') ?? 'n/a'}`);
+    }
+
     const categories = new Map();
     let created = 0;
     let renamed = 0;
@@ -96,15 +104,25 @@ client.once(Events.ClientReady, async () => {
           name: definition.name,
           type: ChannelType.GuildCategory,
           reason: 'Organização visual solicitada para o UCM Studios'
+        }).then((createdCategory) => {
+          created += 1;
+          return createdCategory;
+        }).catch((error) => {
+          console.error(`[UCM-LAYOUT] Falha ao criar categoria ${definition.name}:`, error.message);
+          return null;
         });
-        created += 1;
       } else if (category.name !== definition.name) {
-        await category.setName(definition.name, 'Padronização visual do UCM Studios');
-        renamed += 1;
+        await category.setName(definition.name, 'Padronização visual do UCM Studios')
+          .then(() => { renamed += 1; })
+          .catch((error) => {
+            console.error(`[UCM-LAYOUT] Falha ao renomear categoria ${category.name}:`, error.message);
+          });
       }
 
-      await category.setPosition(index).catch(() => {});
-      categories.set(definition.key, category);
+      if (category) {
+        await category.setPosition(index).catch(() => {});
+        categories.set(definition.key, category);
+      }
       channels = await guild.channels.fetch();
     }
 
