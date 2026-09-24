@@ -18,8 +18,6 @@ import {
 import { messageEmbedText, messageHasCustomId, newestMessage } from './panel-utils.js';
 import { configureBumpChannel } from './bump-permissions.js';
 import { repairWelcomeNames } from './repair-welcome-names.js';
-import { setupWelcomeManager, handleWelcomeManagerInteraction, sendConfiguredWelcome } from './welcome-manager.js';
-import { buildInviteUrl, handleGenericInteraction, setupGenericGuild } from './multi-server.js';
 
 const {
   DISCORD_TOKEN,
@@ -49,12 +47,6 @@ const normalize = (value = '') => value
   .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '');
-
-function isLegacyManagedGuild(guild) {
-  const configuredId = process.env.MANGAMORPH_GUILD_ID;
-  if (configuredId) return guild.id === configuredId;
-  return normalize(guild.name).includes('mangamorph');
-}
 
 function userIdentity(user, member = null) {
   const displayName = member?.displayName || user.globalName || user.username;
@@ -736,19 +728,6 @@ function buildApplicationModal() {
 }
 
 async function setupGuild(guild) {
-  await setupWelcomeManager(guild, client).catch((error) => {
-    console.error(`[WELCOME] Falha ao registrar comandos em ${guild.name}:`, error.message);
-  });
-
-  await setupGenericGuild(guild).catch((error) => {
-    console.error(`[MULTI] Falha ao preparar ${guild.name}:`, error.message);
-  });
-
-  if (!isLegacyManagedGuild(guild)) {
-    console.log(`[MULTI] ${guild.name}: modo seguro ativado; nenhuma estrutura foi criada automaticamente.`);
-    return;
-  }
-
   await ensureRulesPanel(guild).catch((error) => {
     console.error(`Falha ao preparar regras em ${guild.name}:`, error);
   });
@@ -764,13 +743,7 @@ async function setupGuild(guild) {
 
 client.once(Events.ClientReady, async () => {
   console.log(`MangaMorph online como ${client.user.tag}`);
-  client.user.setActivity('/rimuru ajuda • vários servidores');
-
-  buildInviteUrl(client).then((url) => {
-    console.log(`[MULTI] Convite oficial: ${url}`);
-  }).catch((error) => {
-    console.error('[MULTI] Não foi possível gerar o link de convite:', error.message);
-  });
+  client.user.setActivity('MangaMorph');
 
   configureBumpChannel(client).catch((error) => {
     console.error('[BUMP] Falha ao configurar #bump:', error);
@@ -791,13 +764,6 @@ client.on(Events.GuildCreate, async (guild) => {
 
 client.on(Events.GuildMemberAdd, async (member) => {
   try {
-    if (!isLegacyManagedGuild(member.guild)) {
-      await sendConfiguredWelcome(member, client).catch((error) => {
-        console.error(`[WELCOME] Falha em ${member.guild.name}:`, error.message);
-      });
-      return;
-    }
-
     const role = await findMemberRole(member.guild);
     if (role) {
       await member.roles.add(role, 'Entrada automática no MangaMorph').catch((error) => {
@@ -807,18 +773,13 @@ client.on(Events.GuildMemberAdd, async (member) => {
       console.warn('Cargo Membro não encontrado.');
     }
 
-    const customWelcomeHandled = await sendConfiguredWelcome(member, client).catch((error) => {
-      console.error('[WELCOME] Falha ao enviar boas-vindas personalizadas:', error);
-      return false;
-    });
-
-    const welcomeChannel = customWelcomeHandled ? null : await findTextChannel(
+    const welcomeChannel = await findTextChannel(
       member.guild,
       WELCOME_CHANNEL_ID,
       ['👋・boas-vindas', 'boas-vindas', 'boasvindas']
     );
 
-    if (!customWelcomeHandled && welcomeChannel) {
+    if (welcomeChannel) {
       const embed = new EmbedBuilder()
         .setColor(0x111318)
         .setAuthor({ name: 'MangaMorph', iconURL: client.user.displayAvatarURL() })
@@ -836,7 +797,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
         .setTimestamp();
 
       await welcomeChannel.send({ embeds: [embed] });
-    } else if (!customWelcomeHandled) {
+    } else {
       console.warn('Canal de boas-vindas não encontrado.');
     }
 
@@ -853,9 +814,6 @@ client.on(Events.GuildMemberAdd, async (member) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (!interaction.inGuild()) return;
-
-    if (await handleGenericInteraction(interaction, client)) return;
-    if (await handleWelcomeManagerInteraction(interaction, client)) return;
 
     if (interaction.isButton() && interaction.customId === 'mm_application_open') {
       const alreadyOpen = await findOpenTicket(interaction.guild, interaction.user.id);
