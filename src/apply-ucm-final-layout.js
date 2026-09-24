@@ -155,9 +155,6 @@ client.once(Events.ClientReady, async () => {
     channels = await guild.channels.fetch();
     const punicoes = await getOrCreateCategory(guild, channels, CATEGORY_NAMES.punicoes);
 
-    // Informação oficial perto do topo; Portaria continua acima.
-    await comunidade.setPosition(1).catch(() => {});
-
     await moveAndRename(guild, me, CHANNEL_IDS.announcements, '📢・anúncios', comunidade);
     await moveAndRename(guild, me, CHANNEL_IDS.divulgacao, '📣・divulgação', comunidade);
     await moveAndRename(guild, me, CHANNEL_IDS.parcerias, '🤝・parcerias', comunidade);
@@ -284,22 +281,25 @@ client.once(Events.ClientReady, async () => {
         .catch(() => {});
     }
 
-    const refreshed = await guild.channels.fetch();
-    const communityCategory = refreshed.get(comunidade.id);
-    if (communityCategory) {
-      await communityCategory.setPosition(1).catch(() => {});
+    let finalChannels = await guild.channels.fetch();
+
+    let finalSuggestions = finalChannels.find((channel) =>
+      [ChannelType.GuildText, ChannelType.GuildForum].includes(channel?.type) &&
+      normalize(channel.name) === normalize('💡・sugestões')
+    ) || null;
+
+    if (!finalSuggestions) {
+      finalSuggestions = await guild.channels.create({
+        name: '💡・sugestões',
+        type: ChannelType.GuildText,
+        parent: comunidade.id,
+        topic: 'Envie sugestões para melhorar a comunidade UCM Studios.',
+        reason: 'Garantir canal único de sugestões no layout final'
+      });
+      console.log('[UCM-FINAL] Garantido: 💡・sugestões em 「 UCM 」 COMUNIDADE');
+      finalChannels = await guild.channels.fetch();
     }
 
-    const communityChildren = refreshed
-      .filter((channel) => channel.parentId === comunidade.id)
-      .sort((a, b) => a.rawPosition - b.rawPosition);
-
-    const announcements = communityChildren.find((channel) => normalize(channel.name) === normalize('📢・anúncios'));
-    if (announcements) {
-      await announcements.setPosition(0).catch(() => {});
-    }
-
-    const finalChannels = await guild.channels.fetch();
     const categories = finalChannels
       .filter((channel) => channel?.type === ChannelType.GuildCategory)
       .map((channel) => channel.name);
