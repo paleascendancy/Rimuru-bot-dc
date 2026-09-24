@@ -6,7 +6,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PREPARE_STEPS = [
-  'restore-ucm-groups.js',
   'dedupe-managed-panels.js',
   'integrate-reaction-roles.js',
   'integrate-suggestions.js',
